@@ -42,7 +42,7 @@ def search(trackname):
 
 @app.route("/getgifs")
 def gifs():
-    tags = ['gif']
+    tags = ['gif'] #Normally I use more than just gif but you can use any tags
     import random
     tag = random.choice(tags)
     response = urllib2.urlopen("http://api.tumblr.com/v2/tagged?tag="+tag+"&api_key="+ TUMBLR_CONSUMER_KEY)    
