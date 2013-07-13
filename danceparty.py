@@ -7,6 +7,7 @@ import urllib2
 
 app = Flask(__name__)
 
+TUMBLR_CONSUMER_KEY = "tumblr_consumer_key"
 CONSUMER_KEY = "consumer_key"
 SECRET_KEY = "secret_key"
 
@@ -44,7 +45,7 @@ def gifs():
     tags = ['gif']
     import random
     tag = random.choice(tags)
-    response = urllib2.urlopen("http://api.tumblr.com/v2/tagged?tag="+tag+"&api_key=<tumblr_consumer_key>")    
+    response = urllib2.urlopen("http://api.tumblr.com/v2/tagged?tag="+tag+"&api_key="+ TUMBLR_CONSUMER_KEY)    
     body = json.loads(response.read())
     gifs = [gif['photos'][0]['original_size'] for gif in body['response'] if gif['type'] == 'photo']
     body = {"data" : gifs}
