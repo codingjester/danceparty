@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Dance Party Gifs</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/omgwedancing.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="/static/js/jquery.hotkeys.js"></script>
+  
+  <script type="text/javascript">
+      $(document).ready(function() {
+        
+        $(document).bind('keydown.ctrl_g', change_gifs);      
+        
+        window_height = $(window).height();
+        $('#playlist').height(window_height);
+        
+        var timer;
+        $(document).mousemove(function() {
+            if (timer) {
+                clearTimeout(timer);
+                timer = 0;
+            }
+            $('.row').fadeIn();
+            timer = setTimeout(function() {
+                $('.row').fadeOut();
+            }, 5000);
+        });
+        
+        var callback_object = {};
+        var flashvars = {
+            'playbackToken' : 'GAlNi78J_____zlyYWs5ZG02N2pkaHlhcWsyOWJtYjkyN2xvY2FsaG9zdEbwl7EHvbylWSWFWYMZwfc=',
+            'domain' : 'localhost',
+            'listener' : 'callback_object'
+        };
+        var params = {
+          'allowScriptAccess' : 'always'
+        };
+        var attributes = {};
+        swfobject.embedSWF('http://www.rdio.com/api/swf/', // the location of the Rdio Playback API SWF
+            'apiswf', // the ID of the element that will be replaced with the SWF
+            1, 1, '9.0.0', 'expressInstall.swf', flashvars, params, attributes);
+        // set up the controls
+        var total = 0;
+        var current = 1;
+        $('#play').click(function() {
+            key = $('#track'+current).attr('key');
+            $('#current_track').append('Currently Playing: '+ $('#track'+current).html());            
+            apiswf.rdio_play(key);
+            $('#play').hide();
+            $('#pause').show();
+            setgifbackground();
+        });
+        $("#search-btn").click(function() {
+           val = $('#search').val();
+           $.ajax({
+             url: "/search/"+val,
+             dataType: 'json',
+             success: function(data) {
+                track = data['tracks'][0];
+                total += 1;
+                $('#tracks').append(
+                    "<li id=track"+total +" key=" + track.key + ">"+track.name + " by " + track.artist+"</li>"
+                );
+            }
+           });
+        });
+        var gifs = {};
+        $('#pause').click(function() { 
+            apiswf.rdio_pause();
+            $('#pause').hide();
+            $('#play').show();
+            $('body').css('background', 'none');
+            $('#current_track').html('');            
+        });
+        $('#previous').click(function() { 
+            $('#pause').trigger('click');
+            if (current != 0) {
+                current -=1;
+            }
+            $('#play').trigger('click');
+        });
+        $('#next').click(function() { 
+            $('#pause').trigger('click');
+            if(current < $('#tracks li').length) {
+                current+=1;
+            } 
+            $('#play').trigger('click');
+        });
+        $('#stop').click(function() {
+            $('#pause').trigger('click');
+            apiswf.rdio_stop();
+            $('body').css('background', 'none');
+            $('#current_track').html('');            
+        });
+        
+      });
+      function setgifbackground() {
+        $.ajax({
+            url: "/getgifs",
+            dataType:"json", 
+            success: function(data) { 
+                gifs = data;
+                var random = Math.floor(Math.random()*gifs['data'].length);
+                $("body").css("background", "url(" + gifs['data'][random]['url']+")"); 
+            }
+        });
+      }
+
+      function change_gifs() {
+        background = $('body').css('background');
+        if(background.indexOf(" none ") == -1) {
+           setgifbackground(); 
+        }
+      }
+      
+      var callback_object = {};
+      callback_object.ready = function ready(user) {
+        // Called once the API SWF has loaded and is ready to accept method calls.
+
+        // find the embed/object element
+        apiswf = $('#apiswf').get(0);
+
+        apiswf.rdio_startFrequencyAnalyzer({
+            frequencies: '10-band',
+            period: 100
+        });
+
+        if (user == null) {
+            $('#nobody').show();
+        } else if (user.isSubscriber) {
+            $('#subscriber').show();
+        } else if (user.isTrial) {
+            $('#trial').show();
+        } else if (user.isFree) {
+            $('#remaining').text(user.freeRemaining);
+            $('#free').show();
+        } else {
+            $('#nobody').show();
+        }
+    }
+  </script>
+</head>
+  <body>
+    <div class="container">
+        <div id="apiswf"></div>
+        <div class="row">
+            <div id="nav-box" class="offset4 span5">
+                    <input  id="search" type="textbox" class="span4" value="Search Trackname"/>
+                    <button id="search-btn" type="submit" class="btn btn-info">Search</button> 
+            </div>
+            <div id="playlist" class="span3">
+                <marquee id="current_track"></marquee>
+                <div id="player" class="btn-group">
+                    <a class="btn btn-inverse"><i id= "previous" class="icon-step-backward icon-white"></i></a>
+                    <a class="btn btn-inverse"><i id="play" class="icon-play icon-white"></i><i id="pause" class="icon-pause" style="display:none"></i></a>
+                    <a class="btn btn-inverse"><i id= "stop" class="icon-stop icon-white"></i></a>
+                    <a class="btn btn-inverse"><i id="next" class="icon-step-forward icon-white"></i></a>
+                </div>
+                <div id="tracklist">
+                    <ol id="tracks">
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>
